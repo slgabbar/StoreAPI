@@ -4,9 +4,7 @@ using StoreAPI.Entities;
 
 namespace StoreAPI.Controllers
 {
-    [ApiController]
-    [Route("api/[controller]")]
-    public class ProductController : ControllerBase
+    public class ProductController : BaseApiController
     {
         private readonly StoreDbContext _context;
 
