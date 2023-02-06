@@ -21,13 +21,13 @@ namespace StoreAPI.Controllers
             });
         }
 
-        [HttpGet("get-unauthorized")]
+        [HttpGet("unauthorized")]
         public ActionResult GetUnauthorized()
         {
             return Unauthorized();
         }
 
-        [HttpGet("get-validation-error")]
+        [HttpGet("validation-error")]
         public ActionResult GetValidationError()
         {
             ModelState.AddModelError("Problem 1", "This is first error");
@@ -35,7 +35,7 @@ namespace StoreAPI.Controllers
             return ValidationProblem();
         }
 
-        [HttpGet("get-server-error")]
+        [HttpGet("server-error")]
         public ActionResult GetServerError()
         {
             throw new Exception("This is a servor error");
