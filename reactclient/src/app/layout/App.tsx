@@ -5,11 +5,8 @@ import { useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import HomePage from "../../features/home/HomePage";
 import ProductDetails from "../../features/catalog/ProductDetails";
-import ContactPage from "../../features/contact/ContactPage";
-import AboutPage from "../../features/about/AboutPage";
 import { ToastContainer } from "react-toastify";
 import 'react-toastify/dist/ReactToastify.css'
-import PageNotFound from "../errors/PageNotFound";
 
 function App() {
 
@@ -39,9 +36,6 @@ function App() {
               <Route path='/'  element={<HomePage />} />
               <Route  path='/catalog' element={<Catalog />} />
               <Route path='/catalog/:id' element={<ProductDetails />} />
-              <Route path='/about' element={<AboutPage />} />
-              <Route path='/contact' element={<ContactPage />} />
-              <Route path='/*' element={<PageNotFound />} />
           </Routes>
         </Container>
     </ThemeProvider>
