@@ -3,6 +3,11 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace StoreAPI.Entities
 {
+    public partial class StoreDbContext : DbContext
+    {
+        public virtual DbSet<BasketItem> BasketItems { get; set; }
+    }
+
     public class BasketItemEntityConfiguration : IEntityTypeConfiguration<BasketItem>
     {
         public void Configure(EntityTypeBuilder<BasketItem> builder)
