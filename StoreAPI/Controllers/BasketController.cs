@@ -16,36 +16,33 @@ namespace StoreAPI.Controllers
 
 
         [HttpGet()]
-        public async Task<ActionResult<Product>> GetBasket()
+        public async Task<ActionResult<BasketDto>> GetBasket()
         {
-            var basket = await _context.Baskets
-                .AsNoTracking()
-                .Include(x => x.BasketItems)
-                .ThenInclude(x => x.Product)
-                .Where(x => x.BasketId == Request.Cookies["basketId"])
-                .Select(x => new CartViewModel
-                {
-                    CartId = x.BasketId,
-                    Items = x.BasketItems.Select(y => new CartViewModel.Item
-                    {
-                        Name = y.Product.Name,
-                        Quantity = y.Quantity,
-                        TotalPrice = y.Quantity * y.Product.Price
-                    }).ToList()
-                }).FirstOrDefaultAsync();
+            var basketKey = GetKeyFromRequset(Request, "basketKey");
             
-            return basket != null ? Ok(basket) : NotFound();
+            if (basketKey == null)
+                return NotFound();
+
+            var basket = await ReadBasketAsync(basketKey.Value);
+
+            return basket != null ? Ok(MapToBasketDto(basket)) : NotFound();
         }
 
         [HttpPost("AddToCart")]
         public async Task<ActionResult> AddItemToBasket(Guid productKey, int quantity)
         {
-            var basket = await _context.Baskets
-                .Include(x => x.BasketItems)
-                .ThenInclude(x => x.Product)
-                .FirstOrDefaultAsync();
+            var basketKey = GetKeyFromRequset(Request, "basketKey");
+            if (basketKey == null)
+                return NotFound();
 
-            if (basket != null)
+            var basket = await ReadBasketAsync(basketKey.Value);
+
+            if (basket == null)
+            {
+                basket = GetBasketFromProduct(productKey, quantity);
+                _context.Baskets.Add(basket);
+            }
+            else
             {
                 var item = basket.BasketItems.FirstOrDefault(x => x.ProductKey == productKey);
                 if (item != null)
@@ -57,43 +54,47 @@ namespace StoreAPI.Controllers
                     _context.BasketItems.Add(new BasketItem
                     {
                         BasketKey = basket.BasketKey,
-                        BasketItemId = "BI00001",
                         Quantity = quantity,
                         ProductKey = productKey,
                     });
                 }
             }
-            else
-            {
-                var newBasket = new Basket
-                {
-                    BasketId = "B00001"
-                };
-
-                newBasket.BasketItems.Add(new BasketItem
-                {
-                    BasketItemId = "BI00001",
-                    Quantity = quantity,
-                    ProductKey = productKey,
-                });
-
-                _context.Baskets.Add(newBasket);
-            }
 
             var result = await _context.SaveChangesAsync() > 0;
-            
+
             if (result)
-                return StatusCode(201);
+                return CreatedAtRoute(nameof(GetBasket), MapToBasketDto(basket));
 
             return BadRequest("Error creating basket");
         }
         
+        private Basket GetBasketFromProduct(Guid productKey, int quantity)
+        {
+            return new Basket
+            {
+                BasketItems = new List<BasketItem>
+                {
+                    new BasketItem
+                    {
+                        ProductKey = productKey,
+                        Quantity = quantity,
+                    }
+                }
+            };
+        }
+
+
         [HttpPost("RemoveFromCart")]
         public async Task<ActionResult> RemoveItemFromBasket(Guid productKey, int quantity)
         {
+            var basketKey = GetKeyFromRequset(Request, "basketKey");
+            if (basketKey == null)
+                return NotFound();
+
             var basket = await _context.Baskets
                 .Include(x => x.BasketItems)
                 .ThenInclude(x => x.Product)
+                .Where(x => x.BasketKey == basketKey)
                 .FirstOrDefaultAsync();
             
             if (basket == null)
@@ -115,6 +116,32 @@ namespace StoreAPI.Controllers
                 return StatusCode(201);
 
             return BadRequest("Error creating basket");
+        }
+        
+        private Guid? GetKeyFromRequset(HttpRequest request, string cookie) =>
+            Request.Cookies[cookie] != null && Guid.TryParse(Request.Cookies[cookie], out Guid basketKey)
+                ? basketKey
+                : null;
+
+        private async Task<Basket?> ReadBasketAsync(Guid basketKey) => 
+            await _context.Baskets
+                .AsNoTracking()
+                .Include(x => x.BasketItems)
+                .ThenInclude(x => x.Product)
+                .FirstOrDefaultAsync(x => x.BasketKey == basketKey);
+
+        private BasketDto MapToBasketDto(Basket basket)
+        {
+            return new BasketDto
+            {
+                BasketKey = basket.BasketKey,
+                Items = basket.BasketItems.Select(y => new BasketDto.ItemDto
+                {
+                    Name = y.Product.Name,
+                    Quantity = y.Quantity,
+                    TotalPrice = y.Quantity * y.Product.Price
+                }).ToList()
+            };
         }
     }
 }

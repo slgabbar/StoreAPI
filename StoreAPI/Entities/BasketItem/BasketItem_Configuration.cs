@@ -17,8 +17,6 @@ namespace StoreAPI.Entities
             builder.HasKey(m => m.BasketItemKey);
             builder.Property(m => m.BasketItemKey).ValueGeneratedOnAdd();
 
-            builder.Property(m => m.BasketItemId).IsRequired(true).HasMaxLength(128);
-
             builder.HasOne(m => m.Basket)
                 .WithMany(m => m.BasketItems)
                 .HasForeignKey(m => m.BasketKey);

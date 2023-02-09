@@ -1,14 +1,11 @@
 ﻿namespace StoreAPI.ViewModels
 {
-    public class CartViewModel
+    public class BasketDto
     {
-        public string CartId { get; set; } = null!;
-
-        public List<Item> Items { get; set; } = new List<Item>();
-
+        public Guid BasketKey { get; set; }
+        public List<ItemDto> Items { get; set; } = new List<ItemDto>();
         public long CartPrice => Items.Sum(x => x.TotalPrice);
-
-        public class Item
+        public class ItemDto
         {
             public string Name { get; set; } = null!;
             public int Quantity { get; set; }

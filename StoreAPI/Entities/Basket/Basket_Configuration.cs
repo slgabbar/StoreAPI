@@ -16,7 +16,6 @@ namespace StoreAPI.Entities
 
             builder.HasKey(m => m.BasketKey);
             builder.Property(m => m.BasketKey).ValueGeneratedOnAdd();
-            builder.Property(m => m.BasketId).IsRequired(true).HasMaxLength(128);
         }
     }
 }
