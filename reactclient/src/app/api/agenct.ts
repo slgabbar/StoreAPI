@@ -2,6 +2,8 @@ import axios, { AxiosError, AxiosResponse } from "axios";
 import { toast } from "react-toastify";
 
 axios.defaults.baseURL = 'https://localhost:7158/api/';
+axios.defaults.withCredentials = true;
+
 const responseBody = (response: AxiosResponse) => response.data;
 
 axios.interceptors.response.use(response => {
@@ -44,8 +46,17 @@ const Catalog = {
     details: (id: string) => requests.get(`product/${id}`)
 }
 
+const Basket = {
+    get: () => requests.get('basket'),
+    addItem: (productKey: string , quantity = 1) => requests.post(`basket/AddToCart?productKey=${productKey}&quantity=${quantity}`, {}),
+    addItems: (productKey: string , quantity: number) => requests.post(`basket?productKey=${productKey}&quantity=${quantity}`, {}),
+    removeItem: (productKey: string , quantity: number) => requests.delete(`basket?productKey=${productKey}&quantity=${quantity}`),
+
+}
+
 const agent = {
     Catalog,
+    Basket
 }
 
 export default agent;

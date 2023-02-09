@@ -13,9 +13,9 @@ namespace StoreAPI.Entities
         public void Configure(EntityTypeBuilder<Basket> builder)
         {
             builder.ToTable("Basket");
-
             builder.HasKey(m => m.BasketKey);
             builder.Property(m => m.BasketKey).ValueGeneratedOnAdd();
+            builder.Property(m => m.UserKey).IsRequired(true);
         }
     }
 }

@@ -8,22 +8,24 @@ namespace StoreAPI.Controllers
     public class BasketController : BaseApiController
     {
         private readonly StoreDbContext _context;
+        private readonly Guid _userKey;
 
         public BasketController(StoreDbContext context)
         {
             _context = context;
+            _userKey = new Guid("1b6ae95c-b028-46ae-9555-71a8458afa2a");
         }
 
 
-        [HttpGet()]
+        [HttpGet(Name = "GetBasket")]
         public async Task<ActionResult<BasketDto>> GetBasket()
         {
-            var basketKey = GetKeyFromRequset(Request, "basketKey");
+            var userKey = GetKeyFromRequset(Request, "userKey");
             
-            if (basketKey == null)
+            if (userKey == null)
                 return NotFound();
 
-            var basket = await ReadBasketAsync(basketKey.Value);
+            var basket = await ReadBasketByUserAsync(userKey.Value);
 
             return basket != null ? Ok(MapToBasketDto(basket)) : NotFound();
         }
@@ -31,11 +33,11 @@ namespace StoreAPI.Controllers
         [HttpPost("AddToCart")]
         public async Task<ActionResult> AddItemToBasket(Guid productKey, int quantity)
         {
-            var basketKey = GetKeyFromRequset(Request, "basketKey");
-            if (basketKey == null)
-                return NotFound();
-
-            var basket = await ReadBasketAsync(basketKey.Value);
+            Basket? basket = null;
+            
+            var userKey = GetKeyFromRequset(Request, "userKey");
+            if (userKey != null)
+                basket = await ReadBasketByUserAsync(userKey.Value);
 
             if (basket == null)
             {
@@ -63,15 +65,24 @@ namespace StoreAPI.Controllers
             var result = await _context.SaveChangesAsync() > 0;
 
             if (result)
-                return CreatedAtRoute(nameof(GetBasket), MapToBasketDto(basket));
+                return CreatedAtRoute("GetBasket", MapToBasketDto(basket));
 
             return BadRequest("Error creating basket");
         }
         
         private Basket GetBasketFromProduct(Guid productKey, int quantity)
         {
+            var cookieOptions = new CookieOptions
+            {
+                IsEssential= true,
+                Expires= DateTimeOffset.UtcNow.AddDays(30),
+            };
+
+            Response.Cookies.Append("userKey", _userKey.ToString(), cookieOptions);
+
             return new Basket
             {
+                UserKey = _userKey,
                 BasketItems = new List<BasketItem>
                 {
                     new BasketItem
@@ -123,12 +134,11 @@ namespace StoreAPI.Controllers
                 ? basketKey
                 : null;
 
-        private async Task<Basket?> ReadBasketAsync(Guid basketKey) => 
+        private async Task<Basket?> ReadBasketByUserAsync(Guid userKey) => 
             await _context.Baskets
-                .AsNoTracking()
                 .Include(x => x.BasketItems)
                 .ThenInclude(x => x.Product)
-                .FirstOrDefaultAsync(x => x.BasketKey == basketKey);
+                .FirstOrDefaultAsync(x => x.UserKey == userKey);
 
         private BasketDto MapToBasketDto(Basket basket)
         {
@@ -137,9 +147,7 @@ namespace StoreAPI.Controllers
                 BasketKey = basket.BasketKey,
                 Items = basket.BasketItems.Select(y => new BasketDto.ItemDto
                 {
-                    Name = y.Product.Name,
                     Quantity = y.Quantity,
-                    TotalPrice = y.Quantity * y.Product.Price
                 }).ToList()
             };
         }
