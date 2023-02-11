@@ -49,8 +49,8 @@ const Catalog = {
 const Basket = {
     get: () => requests.get('basket'),
     addItem: (productKey: string , quantity = 1) => requests.post(`basket/AddToCart?productKey=${productKey}&quantity=${quantity}`, {}),
-    addItems: (productKey: string , quantity: number) => requests.post(`basket?productKey=${productKey}&quantity=${quantity}`, {}),
-    removeItem: (productKey: string , quantity: number) => requests.delete(`basket?productKey=${productKey}&quantity=${quantity}`),
+    addItems: (productKey: string , quantity: number) => requests.post(`basket/AddToCart?productKey=${productKey}&quantity=${quantity}`, {}),
+    removeItem: (productKey: string , quantity: number) => requests.delete(`basket/RemoveFromCart?productKey=${productKey}&quantity=${quantity}`),
 
 }
 
