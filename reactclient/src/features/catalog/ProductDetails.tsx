@@ -1,21 +1,56 @@
-import { Divider, Grid, Table, TableBody, TableCell, TableContainer, TableRow, Typography } from "@mui/material";
+import { LoadingButton } from "@mui/lab";
+import { Divider, Grid, Table, TableBody, TableCell, TableContainer, TableRow, TextField, Typography } from "@mui/material";
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import agent from "../../app/api/agenct";
+import { useStoreContext } from "../../app/context/SoreContext";
 import LoadingComponent from "../../app/layout/LoadingComponent";
 import { Product } from "../../app/models/products";
 
 export default function ProductDetails() {
+    const {basket, setBasket, removeItem} = useStoreContext();
     const {id} = useParams<{id: string}>();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
+    const [quantity, setQuantity] = useState(0);
+    const [submitting, setSubmitting] = useState(false);
+    const item = basket?.items.find(i => i.productKey === product?.productKey);
 
     useEffect(() => {
+        
+        if (item) {
+            setQuantity(item.quantity)
+        }
+        
         agent.Catalog.details(id!)
             .then(product => setProduct(product))
             .catch(error => console.log(error))
             .finally(() => setLoading(false));
-    }, [id])
+
+    }, [id, item])
+
+
+    function handleInputChange(event: any) {
+        if (event.target.value >= 0)
+        setQuantity(parseInt(event.target.value));
+    }
+
+    function handleUpdateCart() {
+        setSubmitting(true);
+        if (!item || quantity > item.quantity) {
+            const updatedQuantity = item ? quantity - item.quantity : quantity;
+            agent.Basket.addItem(product?.productKey!, updatedQuantity)
+            .then(basket => setBasket(basket))
+            .catch(error => console.log(error))
+            .finally(() => setSubmitting(false));
+        } else {
+            const updatedQuantity = item.quantity - quantity;
+            agent.Basket.removeItem(product?.productKey!, updatedQuantity)
+            .then(() => removeItem(product?.productKey!, updatedQuantity))
+            .catch(error => console.log(error))
+            .finally(() => setSubmitting(false));
+        }
+    }
 
     if (loading) return<LoadingComponent message="Loading products details..."/>
 
@@ -46,12 +81,43 @@ export default function ProductDetails() {
                                 <TableCell>{product.type}</TableCell>
                             </TableRow>
                             <TableRow>
+                                <TableCell>Brand</TableCell>
+                                <TableCell>{product.brand}</TableCell>
+                            </TableRow>
+                            <TableRow>
                                 <TableCell>Quantity in stock</TableCell>
                                 <TableCell>{product.quantityInStock}</TableCell>
                             </TableRow>
                         </TableBody>
                     </Table>
                 </TableContainer>
+                <Grid container spacing={2}>
+                    <Grid item xs={6}>
+                        <TextField
+                            onChange={handleInputChange}
+                            variant="outlined"
+                            type='number'
+                            label='Quantity in Cart'
+                            fullWidth
+                            value={quantity}
+                        />
+                    </Grid>
+                    <Grid item xs={6}>
+                        <LoadingButton 
+                            disabled={(item?.quantity === quantity) || (!item && quantity === 0)}
+                            loading={submitting}
+                            onClick={handleUpdateCart}
+                            sx={{height: '55px'}}
+                            color='primary'
+                            size="large"
+                            variant="contained"
+                            fullWidth
+                            >
+                            {item ? 'Update Quantity' : 'Add to Cart'}
+                        </LoadingButton>
+
+                    </Grid>
+                </Grid>
             </Grid>
         </Grid>
     )   

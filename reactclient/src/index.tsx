@@ -3,6 +3,7 @@ import App from './app/layout/App';
 import reportWebVitals from './reportWebVitals';
 import './app/layout/styles.css';
 import { BrowserRouter } from 'react-router-dom';
+import { StoreProvider } from './app/context/SoreContext';
 
 const root = ReactDOM.createRoot(
   document.getElementById('root') as HTMLElement
@@ -10,7 +11,9 @@ const root = ReactDOM.createRoot(
 
 root.render(
   <BrowserRouter>
+    <StoreProvider>
       <App />
+    </StoreProvider>
   </BrowserRouter>
 );
 

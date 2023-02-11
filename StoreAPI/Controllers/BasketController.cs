@@ -65,7 +65,10 @@ namespace StoreAPI.Controllers
             var result = await _context.SaveChangesAsync() > 0;
 
             if (result)
-                return CreatedAtRoute("GetBasket", MapToBasketDto(basket));
+            {
+                var basketData = await ReadBasketByUserAsync(basket.UserKey);
+                return CreatedAtRoute("GetBasket", MapToBasketDto(basketData));
+            }
 
             return BadRequest("Error creating basket");
         }
@@ -95,17 +98,17 @@ namespace StoreAPI.Controllers
         }
 
 
-        [HttpPost("RemoveFromCart")]
+        [HttpDelete("RemoveFromCart")]
         public async Task<ActionResult> RemoveItemFromBasket(Guid productKey, int quantity)
         {
-            var basketKey = GetKeyFromRequset(Request, "basketKey");
-            if (basketKey == null)
+            var userKey = GetKeyFromRequset(Request, "userKey");
+            if (userKey == null)
                 return NotFound();
 
             var basket = await _context.Baskets
                 .Include(x => x.BasketItems)
                 .ThenInclude(x => x.Product)
-                .Where(x => x.BasketKey == basketKey)
+                .Where(x => x.UserKey == userKey)
                 .FirstOrDefaultAsync();
             
             if (basket == null)
@@ -144,9 +147,15 @@ namespace StoreAPI.Controllers
         {
             return new BasketDto
             {
-                BasketKey = basket.BasketKey,
+                UserKey = basket.UserKey,
                 Items = basket.BasketItems.Select(y => new BasketDto.ItemDto
                 {
+                    ProductKey= y.ProductKey,
+                    Name = y.Product.Name,
+                    Type = y.Product.Type,
+                    Brand= y.Product.Brand,
+                    PictureUrl = y.Product.PictureUrl,
+                    Price = y.Product.Price,
                     Quantity = y.Quantity,
                 }).ToList()
             };

@@ -3,6 +3,7 @@ import { Avatar, Button, Card, CardActions, CardContent, CardHeader, CardMedia, 
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import agent from "../../app/api/agenct";
+import { useStoreContext } from "../../app/context/SoreContext";
 import { Product } from "../../app/models/products";
 
 interface Props {
@@ -12,9 +13,12 @@ interface Props {
 function ProductCard({product}: Props) {
     const [loading, setLoading] = useState(false);
 
+    const {setBasket} = useStoreContext();
+
     function handleAddItem(productKey: string) {
         setLoading(true);
         agent.Basket.addItem(productKey)
+            .then(basket => setBasket(basket))
             .catch(error => console.log(error))
             .finally(() => setLoading(false));
     }
