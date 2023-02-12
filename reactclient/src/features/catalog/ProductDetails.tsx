@@ -3,12 +3,15 @@ import { Divider, Grid, Table, TableBody, TableCell, TableContainer, TableRow, T
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
 import agent from "../../app/api/agenct";
-import { useStoreContext } from "../../app/context/SoreContext";
 import LoadingComponent from "../../app/layout/LoadingComponent";
 import { Product } from "../../app/models/products";
+import { useAppDispatch, useAppSelector } from "../../app/store/configureStore";
+import { removeItem, setBasket } from "../basket/basketSlice";
 
 export default function ProductDetails() {
-    const {basket, setBasket, removeItem} = useStoreContext();
+    const {basket} = useAppSelector(state => state.basket);
+    const dispatch = useAppDispatch();
+
     const {id} = useParams<{id: string}>();
     const [product, setProduct] = useState<Product | null>(null);
     const [loading, setLoading] = useState(true);
@@ -40,13 +43,13 @@ export default function ProductDetails() {
         if (!item || quantity > item.quantity) {
             const updatedQuantity = item ? quantity - item.quantity : quantity;
             agent.Basket.addItem(product?.productKey!, updatedQuantity)
-            .then(basket => setBasket(basket))
+            .then(basket => dispatch(setBasket(basket)))
             .catch(error => console.log(error))
             .finally(() => setSubmitting(false));
         } else {
             const updatedQuantity = item.quantity - quantity;
             agent.Basket.removeItem(product?.productKey!, updatedQuantity)
-            .then(() => removeItem(product?.productKey!, updatedQuantity))
+            .then(() => dispatch(removeItem({productKey: product?.productKey, quantity: updatedQuantity})))
             .catch(error => console.log(error))
             .finally(() => setSubmitting(false));
         }
