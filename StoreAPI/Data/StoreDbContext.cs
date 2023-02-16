@@ -1,10 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 
 namespace StoreAPI.Entities
 {
-    public partial class StoreDbContext : DbContext
+    public partial class StoreDbContext : IdentityDbContext<User, Role, Guid>
     {
-        public StoreDbContext(DbContextOptions options) : base(options)
+        public StoreDbContext(DbContextOptions<StoreDbContext> options) : base(options)
         {
 
         }
@@ -12,6 +14,8 @@ namespace StoreAPI.Entities
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             modelBuilder.ApplyConfigurationsFromAssembly(GetType().Assembly);
+
+            base.OnModelCreating(modelBuilder);
         }
 
     }
