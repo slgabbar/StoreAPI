@@ -1,33 +1,40 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using StoreAPI.Dtos;
 using StoreAPI.Entities;
+using StoreAPI.Services;
 using StoreAPI.ViewModels;
 
 namespace StoreAPI.Controllers
 {
     public class AccountController : BaseApiController
     {
-        private readonly StoreDbContext _context;
         private readonly UserManager<User> _userManager;
+        private readonly TokenService _tokenService;
         private readonly Guid _userKey;
 
-        public AccountController(StoreDbContext context, UserManager<User> userManager)
+        public AccountController(UserManager<User> userManager, TokenService tokenService)
         {
-            _context = context;
             _userManager = userManager;
             _userKey = new Guid("1b6ae95c-b028-46ae-9555-71a8458afa2a");
+            _tokenService = tokenService;
         }
 
         [HttpPost("login")]
-        public async Task<ActionResult<User>> Login(LoginDto loginDto)
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
             var user = await _userManager.FindByNameAsync(loginDto.UserName);
 
             if (user == null || !await _userManager.CheckPasswordAsync(user, loginDto.Password))
                 return Unauthorized();
-            
-            return user;
+
+            return new UserDto
+            {
+                Email = user.Email,
+                Token = await _tokenService.GenerateToken(user)
+            };
         }
 
         [HttpPost("register")]
@@ -52,6 +59,19 @@ namespace StoreAPI.Controllers
             await _userManager.AddToRoleAsync(user, "member");
 
             return StatusCode(201);
+        }
+
+
+        [Authorize]
+        [HttpGet("currentUser")]
+        public async Task<ActionResult<UserDto>> GetCurrentUser()
+        {
+            var user = await _userManager.FindByNameAsync(User.Identity.Name);
+            return new UserDto
+            {
+                Email = user.Email,
+                Token = await _tokenService.GenerateToken(user)
+            };
         }
     }
 }
