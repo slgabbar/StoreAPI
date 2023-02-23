@@ -51,12 +51,18 @@ const Basket = {
     addItem: (productKey: string , quantity = 1) => requests.post(`basket/AddToCart?productKey=${productKey}&quantity=${quantity}`, {}),
     addItems: (productKey: string , quantity: number) => requests.post(`basket/AddToCart?productKey=${productKey}&quantity=${quantity}`, {}),
     removeItem: (productKey: string , quantity: number) => requests.delete(`basket/RemoveFromCart?productKey=${productKey}&quantity=${quantity}`),
+}
 
+const Account = {
+    login: (values: any) => requests.post('account/login', values),
+    register: (values: any) => requests.post('account/register', values),
+    currentUser: () => requests.get('account/currentUser')
 }
 
 const agent = {
     Catalog,
-    Basket
+    Basket,
+    Account
 }
 
 export default agent;
